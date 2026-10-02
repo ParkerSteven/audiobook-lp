@@ -360,17 +360,23 @@ function Hero() {
               <span className="h-px flex-1 bg-gradient-to-l from-transparent via-gold to-gold/40" />
             </div>
             <div className="mt-4 flex flex-wrap justify-center items-center gap-x-9 gap-y-4">
-              <img
-                src={ibpaBadge}
-                alt="Independent Book Publishers Association — Proud Member"
-                className="h-11 sm:h-12 w-auto drop-shadow-[0_1px_2px_rgba(0,0,0,0.18)]"
-              />
+              <a href="https://www.ibpa-online.org/" target="_blank">
+                <img
+                  src={ibpaBadge}
+                  alt="Independent Book Publishers Association — Proud Member"
+                  className="h-11 sm:h-12 w-auto drop-shadow-[0_1px_2px_rgba(0,0,0,0.18)]"
+                />
+              </a>
               <span className="hidden sm:block h-9 w-px bg-rule" />
-              <img
-                src={BBAImage}
-                alt="BBB Accredited Business"
-                className="h-10 sm:h-11 w-auto drop-shadow-[0_1px_2px_rgba(0,0,0,0.18)]"
-              />
+              <a href="https://www.bbb.org/us/tx/livingston/profile/book-publishers/collingwood-press-0825-1000231047/#sealclick"
+                target="_blank"
+              >
+                <img
+                  src={BBAImage}
+                  alt="BBB Accredited Business"
+                  className="h-10 sm:h-11 w-auto drop-shadow-[0_1px_2px_rgba(0,0,0,0.18)]"
+                />
+              </a>
             </div>
           </div>
         </div>
@@ -1194,15 +1200,21 @@ function Footer() {
           </ul>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center rounded-md bg-paper px-3 py-2">
-              <img
-                src={BBAImage}
-                alt="BBB Accredited Business"
-                className="h-7 w-auto"
-                loading="lazy"
-              />
+              <a href="https://www.bbb.org/us/tx/livingston/profile/book-publishers/collingwood-press-0825-1000231047/#sealclick" target="_blank">
+                <img
+                  src={BBAImage}
+                  alt="BBB Accredited Business"
+                  className="h-7 w-auto"
+                  loading="lazy"
+                />
+              </a>
+
             </div>
             <div className="inline-flex items-center rounded-md bg-paper px-3 py-2">
-              <img src={ibpaBadge} alt="IBPA Proud Member" className="h-7 w-auto" loading="lazy" />
+              <a href="https://www.ibpa-online.org/" target="_blank">
+                <img src={ibpaBadge} alt="IBPA Proud Member" className="h-7 w-auto" loading="lazy" />
+              </a>
+
             </div>
             <div className="inline-flex items-center gap-1.5 rounded-md border border-[#F1E9D6]/25 bg-white/5 px-2.5 py-1.5">
               <div className="flex text-gold">
