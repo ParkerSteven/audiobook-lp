@@ -41,6 +41,8 @@ import markScribd from "@/assets/platform-icons/scribd-icon.png";
 import markBarnes from "@/assets/platform-icons/barnes-icon.png";
 import markOverdrive from "@/assets/platform-icons/overdrive-icon.png";
 import markHoopla from "@/assets/platform-icons/hoopla-icon.png";
+import { submitToGoogleSheet } from "@/lib/submittogooglesheet";
+import BBAImage from "@/assets/blue-seal.png";
 
 const LOGO_URL = logoAsset;
 const pageBg = storybookV2.url;
@@ -253,12 +255,12 @@ function AudiobookPage() {
 function Header() {
   return (
     <header className="border-b border-rule bg-paper/95 backdrop-blur sticky top-0 z-40">
-      <div className="mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-12 py-3.5 flex items-center justify-between gap-3 lg:gap-8">
-        <Link to="/" className="flex items-center min-w-0" aria-label="Collingwood Press">
+      <div className="mx-auto max-w-[1360px] px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3.5 flex items-center justify-between gap-3 lg:gap-8 whitespace-nowrap">
+        <Link to="/" className="flex items-center min-w-0 shrink-0" aria-label="Collingwood Press">
           <img
             src={LOGO_URL}
             alt="Collingwood Press"
-            className="h-12 w-auto max-w-[260px] object-contain sm:h-16 sm:max-w-[280px] lg:h-14"
+            className="h-9 w-auto max-w-[170px] object-contain sm:h-12 sm:max-w-[220px] lg:h-14 lg:max-w-[280px]"
             loading="lazy"
           />
         </Link>
@@ -276,7 +278,7 @@ function Header() {
             FAQ
           </a>
         </nav>
-        <div className="flex items-center gap-5 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-5 shrink-0 ml-auto sm:ml-0">
           <a
             href="tel:+19362233644"
             className="hidden xl:inline whitespace-nowrap font-sans text-[15px] text-ink-soft hover:text-navy"
@@ -285,7 +287,7 @@ function Header() {
           </a>
           <Button
             asChild
-            className="btn-primary text-[10px] sm:text-[12px] px-3 sm:px-5 py-2.5 shrink-0 text-center leading-tight"
+            className="sm:btn-primary text-[11px] sm:text-[12px] px-3 py-2.5 sm:px-4 sm:py-2.5 w-auto whitespace-nowrap shrink-0 text-center leading-none"
           >
             <a href="#signup">Submit Manuscript</a>
           </Button>
@@ -357,7 +359,7 @@ function Hero() {
               </span>
               <span className="h-px flex-1 bg-gradient-to-l from-transparent via-gold to-gold/40" />
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-x-9 gap-y-4">
+            <div className="mt-4 flex flex-wrap justify-center items-center gap-x-9 gap-y-4">
               <img
                 src={ibpaBadge}
                 alt="Independent Book Publishers Association — Proud Member"
@@ -365,7 +367,7 @@ function Hero() {
               />
               <span className="hidden sm:block h-9 w-px bg-rule" />
               <img
-                src={bbbBadge}
+                src={BBAImage}
                 alt="BBB Accredited Business"
                 className="h-10 sm:h-11 w-auto drop-shadow-[0_1px_2px_rgba(0,0,0,0.18)]"
               />
@@ -386,11 +388,19 @@ function ModField({
   name,
   type = "text",
   placeholder,
+  value,
+  onChange,
+  error,
+  required
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
+  value: string;
+  onChange: any;
+  error?:string;
+  required?: boolean;
 }) {
   return (
     <div>
@@ -404,8 +414,10 @@ function ModField({
         id={name}
         name={name}
         type={type}
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
-        required
+        required={required}
         className="w-full bg-paper-deep/40 border border-rule px-3.5 py-3 text-[15.5px] font-sans text-ink placeholder:text-ink-mute/60 focus:outline-none focus:border-navy focus:bg-paper transition"
       />
     </div>
@@ -413,33 +425,135 @@ function ModField({
 }
 
 function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
-  const [sent, setSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false); // NEW: no redirect, just show success inline
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    manuscriptStatus: "",
+  });
+
+  const formatUSPhone = (raw: string) => {
+    let digits = raw.replace(/\D/g, "");
+    if (digits.startsWith("1")) digits = digits.slice(1); // strip leading 1, we add it ourselves
+    digits = digits.slice(0, 10);
+
+    let formatted = "+1";
+    if (digits.length > 0) formatted += ` (${digits.slice(0, 3)}`;
+    if (digits.length >= 3) formatted += `) `;
+    if (digits.length > 3) formatted += digits.slice(3, 6);
+    if (digits.length >= 6) formatted += `-`;
+    if (digits.length > 6) formatted += digits.slice(6, 10);
+    return formatted;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
+    if (name === "phone") {
+      setFormData((prev) => ({ ...prev, phone: formatUSPhone(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
+    if (errors[name]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  };
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = "Please enter a valid email";
+    }
+
+    const phoneDigits = formData.phone.replace(/\D/g, "");
+    if (!formData.phone.trim() || phoneDigits.replace(/^1/, "").length !== 10) {
+      newErrors.phone = "Please enter a valid US phone number";
+    }
+
+    if (!formData.manuscriptStatus.trim()) {
+      newErrors.manuscriptStatus = "Please select an option";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const result = await submitToGoogleSheet({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      manuscriptStatus: formData.manuscriptStatus,
+      source: "Home Page Form",
+    });
+
+    if (!result.success) {
+      alert(result.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // No redirect — just clear and show inline success state
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      manuscriptStatus: "",
+    });
+    setErrors({});
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+  };
+
   return (
     <div className="relative bg-paper text-ink shadow-[0_40px_80px_-30px_rgba(0,0,0,0.35)] border border-rule">
       <div className="h-1.5 bg-gradient-to-r from-gold via-gold-deep to-gold" />
       <div className="relative p-7 lg:p-8">
-        {sent ? (
-          <div className="py-10 text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-navy text-gold flex items-center justify-center display text-[20px]">
-              ✓
-            </div>
-            <h3 className="mt-5 display text-[22px] text-navy">One more step.</h3>
-            <p className="mt-2 font-sans text-[15px] text-ink-mute">
-              Your email app should open with your request ready to send.
-            </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-4 font-sans text-[14px] text-navy">
-              <a href="tel:+19362233644" className="underline">
-                Call us
-              </a>
-              <a
-                href="mailto:info@thecollingwoodpress.com?subject=Audiobook%20consultation"
-                className="underline"
-              >
-                Email us directly
-              </a>
-            </div>
-          </div>
-        ) : (
+        {isSubmitted ? (
+                <div className="py-6 text-center">
+                  <p className="regal text-[12px] tracking-[0.22em] uppercase text-maroon">
+                    Thank you
+                  </p>
+                  <h3 className="mt-3 display text-[22px] lg:text-[24px] leading-[1.2] text-navy">
+                    We've received your manuscript details.
+                  </h3>
+                  <p className="mt-3 font-sans text-[15px] text-ink-mute leading-[1.55]">
+                    A senior editor will reply within one business day.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsSubmitted(false)}
+                    className="mt-6 btn-secondary"
+                  >
+                    Submit another
+                  </button>
+                </div>
+              )  : (
           <>
             <div className="mb-6">
               <div className="flex items-center gap-2">
@@ -455,64 +569,81 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
                 Tell us about your manuscript and the kind of audiobook you have in mind.
               </p>
             </div>
-            <form
-              className="space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const fields = new FormData(e.currentTarget);
-                const first = String(fields.get(`${idPrefix}-first`) ?? "");
-                const last = String(fields.get(`${idPrefix}-last`) ?? "");
-                const email = String(fields.get(`${idPrefix}-email`) ?? "");
-                const phone = String(fields.get(`${idPrefix}-phone`) ?? "");
-                const stage = String(fields.get(`${idPrefix}-stage`) ?? "");
-                const body = `Name: ${first} ${last}\nEmail: ${email}\nPhone: ${phone}\nManuscript stage: ${stage}`;
-                window.location.href = `mailto:info@thecollingwoodpress.com?subject=${encodeURIComponent("Audiobook consultation request")}&body=${encodeURIComponent(body)}`;
-                setSent(true);
-              }}
-            >
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-3">
-                <ModField label="First name" name={`${idPrefix}-first`} placeholder="Jane" />
-                <ModField label="Last name" name={`${idPrefix}-last`} placeholder="Doe" />
+                <ModField
+                  label="First name"
+                  name="firstName"
+                  placeholder="Jane"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  error={errors.firstName}
+                  required
+                />
+                <ModField
+                  label="Last name"
+                  name="lastName"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  error={errors.lastName}
+                  required
+                />
               </div>
               <ModField
                 label="Email address"
-                name={`${idPrefix}-email`}
+                name="email"
                 type="email"
                 placeholder="jane@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                error={errors.email}
+                required
               />
               <ModField
                 label="Phone"
-                name={`${idPrefix}-phone`}
+                name="phone"
                 type="tel"
                 placeholder="+1 (555) 000-0000"
+                value={formData.phone}
+                onChange={handleChange}
+              // error={errors.phone}
               />
               <div>
-                <label
-                  htmlFor={`${idPrefix}-stage`}
-                  className="font-sans block mb-1.5 text-[12px] font-semibold tracking-[0.14em] uppercase text-navy"
-                >
-                  Manuscript stage
+                <label className="font-sans block mb-1.5 text-[12px] font-semibold tracking-[0.14em] uppercase text-navy">
+                  Where are you?<span className="text-maroon ml-0.5">*</span>
                 </label>
                 <select
-                  id={`${idPrefix}-stage`}
-                  name={`${idPrefix}-stage`}
-                  className="w-full bg-paper-deep/40 border border-rule px-3.5 py-3 text-[15.5px] text-ink font-sans focus:outline-none focus:border-navy focus:bg-paper transition"
+                  name="manuscriptStatus"
+                  required
+                  value={formData.manuscriptStatus}
+                  onChange={handleChange}
+                  className={`w-full bg-paper-deep/40 border px-3.5 py-3 text-[15.5px] text-ink font-sans focus:outline-none focus:bg-paper transition ${errors.manuscriptStatus ? "border-red-500 focus:border-red-500" : "border-rule focus:border-navy"}`}
                 >
-                  <option>Finished manuscript</option>
-                  <option>In editing</option>
-                  <option>Already published</option>
-                  <option>Exploring options</option>
+                  <option value="" disabled>
+                    Select an option
+                  </option>
+                  <option>Early draft — need direction</option>
+                  <option>Complete draft — needs editing</option>
+                  <option>Fully written — needs publishing</option>
+                  <option>Already published — need marketing</option>
                 </select>
+                {errors.manuscriptStatus && (
+                  <p className="mt-1 text-[12px] font-sans text-red-600">
+                    {errors.manuscriptStatus}
+                  </p>
+                )}
               </div>
-              <Button
+              <button
                 type="submit"
-                className="btn-gold w-full mt-2 h-auto whitespace-normal rounded-none"
+                disabled={isSubmitting}
+                className="btn-gold w-full mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Prepare Email Request
-              </Button>
+                {isSubmitting ? "Submitting…" : "Submit for Free Review"}
+              </button>
               <p className="text-[12.5px] text-ink-mute leading-relaxed font-sans">
-                Your email app will open with your details. Review and send the message to request a
-                consultation.
+                By submitting, you consent to The Collingwood Press contacting you about your
+                manuscript. No spam. No sharing.
               </p>
             </form>
           </>
@@ -914,8 +1045,9 @@ function SocialIcon({
   return (
     <a
       href={href}
+      target="_blank"
       aria-label={label}
-      className="w-11 h-11 flex items-center justify-center rounded-full ring-1 ring-white/20 shadow-[0_6px_14px_-6px_rgba(0,0,0,0.6)] transition-transform hover:-translate-y-0.5"
+      className="w-8 h-8 flex items-center justify-center rounded-full ring-1 ring-white/20 shadow-[0_6px_14px_-6px_rgba(0,0,0,0.6)] transition-transform hover:-translate-y-0.5"
       style={{ backgroundColor: color }}
     >
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#fff" aria-hidden="true">
@@ -950,7 +1082,7 @@ function Footer() {
           <div className="mt-6 flex items-center gap-3">
             <SocialIcon
               label="Facebook"
-              href="#"
+              href="https://www.facebook.com/theCollingwoodpress"
               color="#1877F2"
               path={
                 <path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.5-1.5H17V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.6V13h2.7v8h3.2z" />
@@ -958,7 +1090,7 @@ function Footer() {
             />
             <SocialIcon
               label="Instagram"
-              href="#"
+              href="https://www.instagram.com/thecollingwoodpress/"
               color="#E1306C"
               path={
                 <path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.3 2.2.4.6.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.5.4 1.1.4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.3 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.5.2-1.1.4-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.3-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.5-.4-1.1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.3-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.9-.7 1.4-.9.5-.2 1.1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 3.3c-3.3 0-6.5 2.7-6.5 6.5s2.7 6.5 6.5 6.5 6.5-2.7 6.5-6.5-2.9-6.5-6.5-6.5zm0 10.7c-2.3 0-4.2-1.9-4.2-4.2s1.9-4.2 4.2-4.2 4.2 1.9 4.2 4.2-1.9 4.2-4.2 4.2zm6.8-11c-.9 0-1.5.7-1.5 1.5s.7 1.5 1.5 1.5 1.5-.7 1.5-1.5c0-.9-.7-1.5-1.5-1.5z" />
@@ -966,7 +1098,7 @@ function Footer() {
             />
             <SocialIcon
               label="LinkedIn"
-              href="#"
+              href="https://www.linkedin.com/company/the-collingwood-press/"
               color="#0A66C2"
               path={
                 <path d="M4.98 3.5a2.5 2.5 0 11-.02 5.001A2.5 2.5 0 014.98 3.5zM3 8.98h4V21H3V8.98zM9.5 8.98h3.8v1.65h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.35c0-1.28-.02-2.92-1.78-2.92-1.78 0-2.05 1.39-2.05 2.83V21h-4V8.98z" />
@@ -974,7 +1106,7 @@ function Footer() {
             />
             <SocialIcon
               label="X"
-              href="#"
+              href="https://x.com/CollingwoodUS"
               color="#1A1A1A"
               path={
                 <path d="M18.9 3H22l-7.4 8.5L23.2 21h-6.7l-5.3-6.5L5.2 21H2.1l7.9-9.1L1.5 3h6.9l4.8 6L18.9 3zm-2.4 16h1.9L7.6 5H5.5l11 14z" />
@@ -982,7 +1114,7 @@ function Footer() {
             />
             <SocialIcon
               label="TikTok"
-              href="#"
+              href="https://www.tiktok.com/@thecollingwoodpress"
               color="#1F1F1F"
               path={
                 <path d="M19.6 6.7a5.4 5.4 0 01-3.1-1V15c0 3.3-2.7 6-6 6s-6-2.7-6-6 2.7-6 6-6c.3 0 .6 0 .9.1v3a3 3 0 00-.9-.1 3 3 0 103 3V2h3a5.4 5.4 0 003.1 5v-.3z" />
@@ -1063,7 +1195,7 @@ function Footer() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center rounded-md bg-paper px-3 py-2">
               <img
-                src={bbbBadge}
+                src={BBAImage}
                 alt="BBB Accredited Business"
                 className="h-7 w-auto"
                 loading="lazy"
