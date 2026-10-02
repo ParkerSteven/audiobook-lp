@@ -41,8 +41,8 @@ import markScribd from "@/assets/platform-icons/scribd-icon.png";
 import markBarnes from "@/assets/platform-icons/barnes-icon.png";
 import markOverdrive from "@/assets/platform-icons/overdrive-icon.png";
 import markHoopla from "@/assets/platform-icons/hoopla-icon.png";
-import { submitToGoogleSheet } from "@/lib/submittogooglesheet";
 import BBAImage from "@/assets/blue-seal.png";
+import { submitToGoogleSheet } from "@/lib/submitToGoogleSheet";
 
 const LOGO_URL = logoAsset;
 const pageBg = storybookV2.url;
@@ -399,7 +399,7 @@ function ModField({
   placeholder?: string;
   value: string;
   onChange: any;
-  error?:string;
+  error?: string;
   required?: boolean;
 }) {
   return (
@@ -535,25 +535,25 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
       <div className="h-1.5 bg-gradient-to-r from-gold via-gold-deep to-gold" />
       <div className="relative p-7 lg:p-8">
         {isSubmitted ? (
-                <div className="py-6 text-center">
-                  <p className="regal text-[12px] tracking-[0.22em] uppercase text-maroon">
-                    Thank you
-                  </p>
-                  <h3 className="mt-3 display text-[22px] lg:text-[24px] leading-[1.2] text-navy">
-                    We've received your manuscript details.
-                  </h3>
-                  <p className="mt-3 font-sans text-[15px] text-ink-mute leading-[1.55]">
-                    A senior editor will reply within one business day.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setIsSubmitted(false)}
-                    className="mt-6 btn-secondary"
-                  >
-                    Submit another
-                  </button>
-                </div>
-              )  : (
+          <div className="py-6 text-center">
+            <p className="regal text-[12px] tracking-[0.22em] uppercase text-maroon">
+              Thank you
+            </p>
+            <h3 className="mt-3 display text-[22px] lg:text-[24px] leading-[1.2] text-navy">
+              We've received your manuscript details.
+            </h3>
+            <p className="mt-3 font-sans text-[15px] text-ink-mute leading-[1.55]">
+              A senior editor will reply within one business day.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsSubmitted(false)}
+              className="mt-6 btn-secondary"
+            >
+              Submit another
+            </button>
+          </div>
+        ) : (
           <>
             <div className="mb-6">
               <div className="flex items-center gap-2">
