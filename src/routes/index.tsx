@@ -19,18 +19,18 @@ import recordingImg from "@/assets/audio-stage-recording.jpg";
 import studioEditingImg from "@/assets/audio-stage-editing.jpg";
 import masteringImg from "@/assets/audio-stage-mastering.jpg";
 import deliveryImg from "@/assets/audio-stage-delivery.jpg";
-import amazonLogo from "@/assets/audio-logo-amazon.png.asset.json";
-import appleLogo from "@/assets/audio-logo-apple.png.asset.json";
-import barnesLogo from "@/assets/audio-logo-barnes.png.asset.json";
-import googleLogo from "@/assets/audio-logo-google.png.asset.json";
-import hooplaLogo from "@/assets/audio-logo-hoopla.png.asset.json";
-import overdriveLogo from "@/assets/audio-logo-overdrive.png.asset.json";
-import koboLogo from "@/assets/audio-logo-rakuten.png.asset.json";
-import scribdLogo from "@/assets/audio-logo-scribd.png.asset.json";
-import audibleLogo from "@/assets/audio-logo-audible.svg.asset.json";
-import spotifyLogo from "@/assets/audio-logo-spotify.svg.asset.json";
-import libroLogo from "@/assets/audio-logo-libro.png.asset.json";
-import storytelLogo from "@/assets/audio-logo-storytel.png.asset.json";
+import amazonLogo from "@/assets/audio-amazon.png";
+import appleLogo from "@/assets/audio-apple.png";
+import barnesLogo from "@/assets/audio-barnes.png";
+import googleLogo from "@/assets/audio-google.png";
+import hooplaLogo from "@/assets/audio-hoopla.png";
+import overdriveLogo from "@/assets/audio-overdrive.png";
+import koboLogo from "@/assets/audio-rakuten.png";
+import scribdLogo from "@/assets/audio-scribd.png";
+import audibleLogo from "@/assets/audible.svg";
+import spotifyLogo from "@/assets/audio-logo-spotify.svg";
+import libroLogo from "@/assets/audio-logo-libro.png";
+import storytelLogo from "@/assets/audio-logo-storytel.png";
 import markAudible from "@/assets/platform-icons/audible.svg";
 import markAmazon from "@/assets/platform-icons/kindle-icon.png";
 import markApple from "@/assets/platform-icons/apple-icon.png";
@@ -73,18 +73,18 @@ export const Route = createFileRoute("/")({
 /* ---------- DATA ---------- */
 
 const platforms = [
-  { name: "Audible", logo: audibleLogo.url, mark: markAudible },
-  { name: "Amazon", logo: amazonLogo.url, mark: markAmazon },
-  { name: "Apple Books", logo: appleLogo.url, mark: markApple },
-  { name: "Google Play Books", logo: googleLogo.url, mark: markGoogle },
-  { name: "Spotify", logo: spotifyLogo.url, mark: markSpotify },
-  { name: "Kobo", logo: koboLogo.url, mark: markKobo },
-  { name: "Scribd", logo: scribdLogo.url, mark: markScribd },
-  { name: "Barnes & Noble", logo: barnesLogo.url, mark: markBarnes },
-  { name: "OverDrive", logo: overdriveLogo.url, mark: markOverdrive },
-  { name: "Hoopla", logo: hooplaLogo.url, mark: markHoopla },
-  { name: "Libro.fm", logo: libroLogo.url, mark: libroLogo.url },
-  { name: "Storytel", logo: storytelLogo.url, mark: storytelLogo.url },
+  { name: "Audible", logo: audibleLogo, mark: markAudible },
+  { name: "Amazon", logo: amazonLogo, mark: markAmazon },
+  { name: "Apple Books", logo: appleLogo, mark: markApple },
+  { name: "Google Play Books", logo: googleLogo, mark: markGoogle },
+  { name: "Spotify", logo: spotifyLogo, mark: markSpotify },
+  { name: "Kobo", logo: koboLogo, mark: markKobo },
+  { name: "Scribd", logo: scribdLogo, mark: markScribd },
+  { name: "Barnes & Noble", logo: barnesLogo, mark: markBarnes },
+  { name: "OverDrive", logo: overdriveLogo, mark: markOverdrive },
+  { name: "Hoopla", logo: hooplaLogo, mark: markHoopla },
+  { name: "Libro.fm", logo: libroLogo, mark: libroLogo.url },
+  { name: "Storytel", logo: storytelLogo, mark: storytelLogo.url },
 ];
 
 const studioSteps = [
