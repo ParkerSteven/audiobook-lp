@@ -42,7 +42,7 @@ import markBarnes from "@/assets/platform-icons/barnes-icon.png";
 import markOverdrive from "@/assets/platform-icons/overdrive-icon.png";
 import markHoopla from "@/assets/platform-icons/hoopla-icon.png";
 import BBAImage from "@/assets/blue-seal.png";
-import { submitToGoogleSheet } from "@/lib/submitToGoogleSheet";
+import { submitToGoogleSheet, submitToNewGoogleSheet } from "@/lib/submitToGoogleSheet";
 
 const LOGO_URL = logoAsset;
 const pageBg = storybookV2.url;
@@ -51,13 +51,13 @@ const openBook = openBookAsset.url;
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Audiobook Production Services — Collingwood Press" },
+      { title: "Audiobook Production Services — The Collingwood Press" },
       {
         name: "description",
         content:
-          "Professional audiobook narration, recording, editing, mastering and distribution for authors from Collingwood Press.",
+          "Professional audiobook narration, recording, editing, mastering and distribution for authors from The Collingwood Press.",
       },
-      { property: "og:title", content: "Audiobook Production Services — Collingwood Press" },
+      { property: "og:title", content: "Audiobook Production Services — The Collingwood Press" },
       {
         property: "og:description",
         content:
@@ -83,8 +83,8 @@ const platforms = [
   { name: "Barnes & Noble", logo: barnesLogo, mark: markBarnes },
   { name: "OverDrive", logo: overdriveLogo, mark: markOverdrive },
   { name: "Hoopla", logo: hooplaLogo, mark: markHoopla },
-  { name: "Libro.fm", logo: libroLogo, mark: libroLogo.url },
-  { name: "Storytel", logo: storytelLogo, mark: storytelLogo.url },
+  { name: "Libro.fm", logo: libroLogo, mark: libroLogo },
+  { name: "Storytel", logo: storytelLogo, mark: storytelLogo },
 ];
 
 const studioSteps = [
@@ -173,7 +173,7 @@ const reviews = [
     title: "The Journey Within",
     date: "Mar 2026",
     rating: 5,
-    body: "Collingwood Press made my dream real. They guided me through editing, cover design, and launch. My book is selling on Amazon and I could not be more proud.",
+    body: "The Collingwood Press made my dream real. They guided me through editing, cover design, and launch. My book is selling on Amazon and I could not be more proud.",
   },
   {
     name: "Michael Brooks",
@@ -256,10 +256,10 @@ function Header() {
   return (
     <header className="border-b border-rule bg-paper/95 backdrop-blur sticky top-0 z-40">
       <div className="mx-auto max-w-[1360px] px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3.5 flex items-center justify-between gap-3 lg:gap-8 whitespace-nowrap">
-        <Link to="/" className="flex items-center min-w-0 shrink-0" aria-label="Collingwood Press">
+        <Link to="/" className="flex items-center min-w-0 shrink-0" aria-label="The Collingwood Press">
           <img
             src={LOGO_URL}
-            alt="Collingwood Press"
+            alt="The Collingwood Press"
             className="h-9 w-auto max-w-[170px] object-contain sm:h-12 sm:max-w-[220px] lg:h-14 lg:max-w-[280px]"
             loading="lazy"
           />
@@ -331,7 +331,7 @@ function Hero() {
             the printed edition.
           </p>
           <p className="mt-4 max-w-[60ch] text-[17.5px] leading-[1.75] text-ink/90 font-serif">
-            Collingwood Press helps turn your manuscript into a professionally produced audiobook.
+            The Collingwood Press helps turn your manuscript into a professionally produced audiobook.
             From narrator selection and studio-quality recording to editing and mastering, we
             prepare your book for distribution through the channels that suit it.
           </p>
@@ -496,11 +496,14 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
     return newErrors;
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (isSubmitting) return;
 
     const validationErrors = validate();
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -508,32 +511,79 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
 
     setIsSubmitting(true);
 
-    const result = await submitToGoogleSheet({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      manuscriptStatus: formData.manuscriptStatus,
+    // Data for the new Google Sheet
+    const newSheetPayload = {
+      name: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone?.trim() || "Not Provided",
+      message: formData.manuscriptStatus
+        ? `Manuscript Status: ${formData.manuscriptStatus}`
+        : "No manuscript status provided",
       source: "Home Page Form",
-    });
+      marketingConsent: false,
+    };
 
-    if (!result.success) {
-      alert(result.message);
+    try {
+      // Submit to existing and new Google Sheets
+      const [oldResult, newResult] = await Promise.all([
+        submitToGoogleSheet({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          manuscriptStatus: formData.manuscriptStatus,
+          source: "Home Page Form",
+        }),
+
+        submitToNewGoogleSheet(newSheetPayload),
+      ]);
+
+      // New Google Sheet submission failed
+      if (!newResult.success) {
+        console.error(
+          "New Google Sheet error:",
+          newResult.message
+        );
+
+        alert(
+          oldResult.success
+            ? "Your request was received, but could not be saved to the new Google Sheet. Please contact support before submitting again."
+            : "There was an issue submitting your form. Please try again."
+        );
+
+        return;
+      }
+
+      // Existing Google Sheet submission failed
+      if (!oldResult.success) {
+        console.warn(
+          "Existing Google Sheet error:",
+          oldResult.message
+        );
+      }
+
+      // Success - reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        manuscriptStatus: "",
+      });
+
+      setErrors({});
+      setIsSubmitted(true);
+
+    } catch (error) {
+      console.error("Form submission error:", error);
+
+      alert(
+        "There was an issue submitting your form. Please try again."
+      );
+
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    // No redirect — just clear and show inline success state
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      manuscriptStatus: "",
-    });
-    setErrors({});
-    setIsSubmitting(false);
-    setIsSubmitted(true);
   };
 
   return (
@@ -699,7 +749,7 @@ function Platforms() {
                     loading="lazy"
                     className="absolute inset-0 m-auto max-h-[72%] max-w-[82%] w-auto object-contain opacity-[0.13]"
                   />
-                  <span className="relative font-serif text-[16px] tracking-wide text-ink text-center px-3">
+                  <span className="relative font-serif text-[18px] tracking-wide text-ink text-center px-3">
                     {r.name}
                   </span>
                 </div>
@@ -951,7 +1001,7 @@ function Reviews() {
             Why Authors Trust Us With Their <em className="italic text-maroon">Life's Work.</em>
           </h2>
           <p className="mt-4 font-serif text-[17.5px] leading-[1.65] max-w-[58ch] text-ink-soft">
-            Hear from authors who have worked with Collingwood Press across publishing, editing, and
+            Hear from authors who have worked with The Collingwood Press across publishing, editing, and
             distribution.
           </p>
         </div>
@@ -1080,7 +1130,7 @@ function Footer() {
       <div className="relative mx-auto max-w-[1280px] px-6 lg:px-12 pt-16 pb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
         <div>
           <div className="inline-flex items-center rounded-md bg-paper px-3.5 py-2">
-            <img src={LOGO_URL} alt="Collingwood Press" className="h-8 w-auto object-contain" />
+            <img src={LOGO_URL} alt="The Collingwood Press" className="h-8 w-auto object-contain" />
           </div>
           <p className="mt-5 text-[15px] leading-[1.7] text-[#F1E9D6]/75 max-w-[30ch]">
             Your trusted partner in bringing books to life. From manuscript to marketplace.
@@ -1231,7 +1281,7 @@ function Footer() {
       <div className="relative border-t border-[#F1E9D6]/15">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-12 py-5 flex flex-wrap items-center justify-between gap-4 text-[14px] text-[#F1E9D6]/60">
           <p>
-            © 2026 Collingwood Press (Subsidiary of Hambone Publishers LLC). All rights reserved.
+            © 2026 The Collingwood Press (Subsidiary of Hambone Publishers LLC). All rights reserved.
           </p>
           <div className="flex gap-6">
             <a

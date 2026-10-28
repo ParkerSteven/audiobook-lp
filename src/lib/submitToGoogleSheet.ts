@@ -13,6 +13,16 @@ interface FormData {
   source?: string;
 }
 
+interface NewSheetFormData {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  source: string;
+  marketingConsent: boolean;
+}
+
+
 export async function submitToGoogleSheet(data: FormData) {
   try {
     const name = data.name || `${data.firstName || ''} ${data.lastName || ''}`.trim();
@@ -78,3 +88,30 @@ This is an auto-generated lead notification from the website.`;
     };
   }
 }
+
+export async function submitToNewGoogleSheet(data: NewSheetFormData) {
+  try {
+    const response = await fetch("https://www.thecollingwoodpress.com/api/new-google-sheet/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    return {
+      success: response.ok && result.success === true,
+      message: result.message || "",
+    };
+  } catch (error) {
+    console.error("New Sheet submission error:", error);
+
+    return {
+      success: false,
+      message: "Could not save data to new Google Sheet.",
+    };
+  }
+}
+

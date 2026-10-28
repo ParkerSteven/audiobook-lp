@@ -79,14 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Collingwood Press — Publishing Services for Serious Authors" },
+      { title: "The Collingwood Press — Publishing Services for Serious Authors" },
       {
         name: "description",
         content:
-          "Manuscript to published. Editing, design, distribution, and setup — no lock-ins, no vanity pitches. Get a free manuscript review from Collingwood Press.",
+          "Manuscript to published. Editing, design, distribution, and setup — no lock-ins, no vanity pitches. Get a free manuscript review from The Collingwood Press.",
       },
-      { name: "author", content: "Collingwood Press" },
-      { property: "og:title", content: "Collingwood Press — Publishing Services" },
+      { name: "author", content: "The Collingwood Press" },
+      { property: "og:title", content: "The Collingwood Press — Publishing Services" },
       {
         property: "og:description",
         content:
