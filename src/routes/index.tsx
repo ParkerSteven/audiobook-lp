@@ -532,7 +532,7 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
           email: formData.email,
           phone: formData.phone,
           manuscriptStatus: formData.manuscriptStatus,
-          source: "Home Page Form",
+          source: "Audiobook landing page",
         }),
 
         submitToNewGoogleSheet(newSheetPayload),
