@@ -573,7 +573,7 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
       });
 
       setErrors({});
-      setIsSubmitted(true);
+      // setIsSubmitted(true);
 
     } catch (error) {
       console.error("Form submission error:", error);
