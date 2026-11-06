@@ -562,6 +562,7 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
         );
       }
 
+      window.location.href = "https://www.thecollingwoodpress.com/thankyou/";
       // Success - reset form
       setFormData({
         firstName: "",
