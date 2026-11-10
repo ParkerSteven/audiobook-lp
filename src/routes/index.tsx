@@ -521,6 +521,7 @@ function LeadForm({ idPrefix = "hero" }: { idPrefix?: string }) {
         : "No manuscript status provided",
       source: "Home Page Form",
       marketingConsent: false,
+      websiteUrl: window.location.href,
     };
 
     try {
