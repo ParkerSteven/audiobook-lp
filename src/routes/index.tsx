@@ -1233,10 +1233,10 @@ function Footer() {
           <ul className="space-y-3 text-[15px] text-[#F1E9D6]/80">
             <li>
               <a
-                href="mailto:info@thecollingwoodpress.com"
+                href="mailto:contact@thecollingwoodpress.com"
                 className="transition-colors hover:text-gold"
               >
-                info@thecollingwoodpress.com
+                contact@thecollingwoodpress.com
               </a>
             </li>
             <li>
